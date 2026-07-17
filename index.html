@@ -16,6 +16,8 @@
       --border: #dfe3e1;
       --text: #1f2a24;
       --muted: #6b7570;
+      --ot: #b8860b;
+      --ot-dark: #7a5a06;
     }
     * { box-sizing: border-box; }
     body {
@@ -39,7 +41,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
-    select, input[type="date"], input[type="time"], input[type="text"] {
+    select, input[type="date"], input[type="time"], input[type="text"], textarea {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid var(--border);
@@ -50,17 +52,18 @@
       background: #fff;
       color: var(--text);
     }
+    textarea { resize: vertical; min-height: 64px; }
     input[readonly] { background: #f0f2f1; color: var(--muted); }
     .row { display: flex; gap: 12px; }
     .row > div { flex: 1; }
-    .type-toggle { display: flex; gap: 10px; margin-bottom: 18px; }
+    .type-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
     .type-btn {
       flex: 1;
-      padding: 12px;
+      padding: 12px 6px;
       border: 2px solid var(--border);
       border-radius: 10px;
       background: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       font-family: 'Roboto', sans-serif;
       cursor: pointer;
@@ -69,6 +72,9 @@
     }
     .type-btn.active.in { border-color: var(--accent); background: #e9f4ee; color: var(--accent-dark); }
     .type-btn.active.out { border-color: #a04a3a; background: #fbece8; color: #7a3527; }
+    .type-btn.active.ot { border-color: var(--ot); background: #fbf3e0; color: var(--ot-dark); }
+    .reason-field { display: none; }
+    .reason-field.visible { display: block; }
     button.submit {
       width: 100%;
       padding: 13px;
@@ -118,6 +124,12 @@
       <div class="type-toggle">
         <button type="button" class="type-btn in active" id="btnIn">Time In</button>
         <button type="button" class="type-btn out" id="btnOut">Time Out</button>
+        <button type="button" class="type-btn ot" id="btnOt">Overtime</button>
+      </div>
+
+      <div class="reason-field" id="reasonField">
+        <label for="otReason">Reason for Overtime</label>
+        <textarea id="otReason" placeholder="Briefly explain the reason for overtime"></textarea>
       </div>
 
       <button class="submit" id="submitBtn">Submit</button>
@@ -126,7 +138,6 @@
   </div>
 
   <script>
-    // Your Apps Script Web App URL (acts as the JSON API + database gateway)
     var WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxFl4quAst4-ms-4948uT-vItN0d8iHYraLiDj7hhmACGZyZ76H4bsckniT_-nq5TqobA/exec';
 
     var selectedType = 'Time In';
@@ -209,19 +220,29 @@
       selectedType = type;
       document.getElementById('btnIn').classList.toggle('active', type === 'Time In');
       document.getElementById('btnOut').classList.toggle('active', type === 'Time Out');
+      document.getElementById('btnOt').classList.toggle('active', type === 'Overtime');
+      document.getElementById('reasonField').classList.toggle('visible', type === 'Overtime');
     }
     document.getElementById('btnIn').addEventListener('click', function () { setType('Time In'); });
     document.getElementById('btnOut').addEventListener('click', function () { setType('Time Out'); });
+    document.getElementById('btnOt').addEventListener('click', function () { setType('Overtime'); });
 
     document.getElementById('submitBtn').addEventListener('click', function () {
       var name = document.getElementById('empName').value;
       var id = document.getElementById('empId').value;
       var date = document.getElementById('empDate').value;
       var time = document.getElementById('empTime').value;
+      var reason = document.getElementById('otReason').value.trim();
       var statusEl = document.getElementById('statusMsg');
 
       if (!name || !date || !time) {
         statusEl.textContent = 'Please fill in name, date, and time.';
+        statusEl.className = 'status error';
+        return;
+      }
+
+      if (selectedType === 'Overtime' && !reason) {
+        statusEl.textContent = 'Please provide a reason for overtime.';
         statusEl.className = 'status error';
         return;
       }
@@ -237,7 +258,8 @@
         name: name,
         date: date,
         time: time,
-        type: selectedType
+        type: selectedType,
+        reason: selectedType === 'Overtime' ? reason : ''
       });
 
       jsonp(WEBAPP_URL + '?' + params.toString(), function (result) {
@@ -249,6 +271,9 @@
         }
         statusEl.textContent = 'Recorded: ' + selectedType + ' for ' + name + ' — Pay Period ' + result.data.payPeriod;
         statusEl.className = 'status success';
+        if (selectedType === 'Overtime') {
+          document.getElementById('otReason').value = '';
+        }
       });
     });
 
