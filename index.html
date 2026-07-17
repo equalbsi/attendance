@@ -269,7 +269,10 @@
           statusEl.className = 'status error';
           return;
         }
-        statusEl.textContent = 'Recorded: ' + selectedType + ' for ' + name + ' — Pay Period ' + result.data.payPeriod;
+        statusEl.innerHTML = 'Recorded: ' + selectedType + ' for ' + name + ' — Pay Period ' + result.data.payPeriod +
+          '<br><span style="font-size:11px;color:#888;">Sheet: ' + result.data.debug_sheetName +
+          ' | Row ' + result.data.debug_lastRow +
+          '<br>' + result.data.debug_spreadsheetUrl + '</span>';
         statusEl.className = 'status success';
         if (selectedType === 'Overtime') {
           document.getElementById('otReason').value = '';
